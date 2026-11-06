@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LinguaFriend 🎓</title>
+<style>
+:root{
+  --bg:#0d1020; --panel:#161a2e; --panel2:#1e2440; --text:#eef0ff;
+  --muted:#8b93b8; --accent:#7c5cff; --accent2:#22d3ee;
+  --good:#22c55e; --bad:#ef4444; --warn:#f59e0b;
+  --radius:16px; --shadow:0 10px 30px rgba(0,0,0,.35);
+}
+[data-theme="light"]{
+  --bg:#f4f6ff; --panel:#fff; --panel2:#eef1ff; --text:#12162b;
+  --muted:#5b6285; --shadow:0 10px 30px rgba(80,90,160,.12);
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Segoe UI',system-ui,sans-serif;
+  background:var(--bg);color:var(--text);min-height:100vh;transition:.2s}
+button{font:inherit;cursor:pointer}
+.app{max-width:1100px;margin:0 auto;padding:24px}
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+h1{margin:0;font-size:24px;background:linear-gradient(90deg,var(--accent),var(--accent2));
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{color:var(--muted);font-size:13px}
+.grid{display:grid;grid-template-columns:340px 1fr;gap:20px}
+@media(max-width:820px){.grid{grid-template-columns:1fr}}
+.card-panel{background:var(--panel);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
+label{display:block;font-size:12px;color:var(--muted);margin:12px 0 6px;
+  text-transform:uppercase;letter-spacing:.5px}
+input,select{width:100%;padding:11px 14px;border-radius:12px;border:1px solid var(--panel2);
+  background:var(--bg);color:var(--text);font-size:14px;outline:none}
+input:focus,select:focus{border-color:var(--accent)}
+.btn{width:100%;padding:12px;border:0;border-radius:12px;font-weight:600;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;margin-top:16px;
+  transition:transform .15s}
+.btn:hover{transform:translateY(-1px)}
+.btn.ghost{background:var(--panel2);color:var(--text)}
+.topics{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.chip{padding:8px 12px;border-radius:999px;background:var(--panel2);font-size:13px;
+  border:1px solid transparent;transition:.15s;cursor:pointer}
+.chip.active{border-color:var(--accent);color:var(--accent)}
+.deck-item{display:flex;justify-content:space-between;align-items:center;
+  padding:12px;border-radius:12px;background:var(--panel2);margin-bottom:8px;
+  font-size:14px;cursor:pointer}
+.deck-item:hover{outline:1px solid var(--accent)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
+.stat{background:var(--panel2);border-radius:12px;padding:12px;text-align:center}
+.stat b{display:block;font-size:20px;color:var(--accent)}
+.stat span{font-size:11px;color:var(--muted)}
+.flash-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:420px;gap:20px}
+.flash{width:100%;max-width:460px;height:280px;perspective:1200px;cursor:pointer}
+.flash-inner{position:relative;width:100%;height:100%;transition:transform .5s;
+  transform-style:preserve-3d}
+.flash.flipped .flash-inner{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;backface-visibility:hidden;border-radius:22px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:24px;text-align:center;box-shadow:var(--shadow)}
+.front{background:linear-gradient(135deg,var(--panel),var(--panel2))}
+.back{background:linear-gradient(135deg,#1b3b6f,#7c5cff);color:#fff;transform:rotateY(180deg)}
+.word{font-size:34px;font-weight:700;margin:0}
+.transcription{color:var(--muted);margin-top:6px;font-size:15px}
+.back .word{color:#fff}
+.example{margin-top:14px;font-size:14px;opacity:.9;font-style:italic}
+.example-ru{font-size:13px;opacity:.75;margin-top:4px}
+.hint{margin-top:10px;font-size:12px;padding:6px 10px;border-radius:8px;
+  background:rgba(255,255,255,.15)}
+.speak{position:absolute;top:14px;right:14px;background:transparent;border:0;
+  font-size:20px;color:inherit}
+.rate{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.rate button{padding:10px 18px;border:0;border-radius:12px;font-weight:600;color:#fff}
+.rate .again{background:var(--bad)}
+.rate .hard{background:var(--warn)}
+.rate .good{background:var(--good)}
+.rate .easy{background:var(--accent)}
+.progress{width:100%;max-width:460px;height:6px;background:var(--panel2);
+  border-radius:99px;overflow:hidden}
+.progress > div{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));
+  width:0;transition:width .3s}
+.empty{text-align:center;color:var(--muted);padding:60px 20px}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(100px);
+  background:var(--accent);color:#fff;padding:12px 20px;border-radius:12px;
+  transition:.3s;box-shadow:var(--shadow);z-index:99}
+.toast.show{transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body data-theme="dark">
+<div class="app">
+  <header>
+    <div>
+      <h1>LinguaFriend 🎓</h1>
+      <div class="sub">Умный тренажёр английского · работает офлайн</div>
+    </div>
+    <button class="btn ghost" style="width:auto;margin:0;padding:10px 16px"
+            onclick="toggleTheme()">🌓</button>
+  </header>
+
+  <div class="grid">
+    <div>
+      <div class="card-panel">
+        <label>Твой уровень</label>
+        <select id="level">
+          <option value="A1">A1 — Beginner</option>
+          <option value="A2" selected>A2 — Elementary</option>
+          <option value="B1">B1 — Intermediate</option>
+          <option value="B2">B2 — Upper-Int</option>
+          <option value="C1">C1 — Advanced</option>
+        </select>
+        <label>Тема</label>
+        <div class="topics" id="topics"></div>
+        <label>Сколько карточек</label>
+        <select id="count">
+          <option>5</option><option selected>10</option>
+          <option>15</option><option>20</option>
+        </select>
+        <button class="btn" onclick="createDeck()">✨ Сгенерировать карточки</button>
+      </div>
+
+      <div class="card-panel" style="margin-top:16px">
+        <label>Мои наборы</label>
+        <div id="decks"></div>
+      </div>
+
+      <div class="card-panel" style="margin-top:16px">
+        <label>Статистика</label>
+        <div class="stats">
+          <div class="stat"><b id="stTotal">0</b><span>всего слов</span></div>
+          <div class="stat"><b id="stLearned">0</b><span>выучено</span></div>
+          <div class="stat"><b id="stToday">0</b><span>сегодня</span></div>
+        </div>
+        <div class="stats" style="grid-template-columns:1fr">
+          <div class="stat"><b id="stAcc">0%</b><span>средняя точность</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-panel" id="studyPanel">
+      <div class="empty">
+        <div style="font-size:48px">🃏</div>
+        <p>Выбери тему слева и нажми «Сгенерировать»,<br>или открой готовый набор — и начнём!</p>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ================== СЛОВАРЬ ================== */
+const VOCAB = {
+  numbers: [
+    {en:"one",ru:"один",tr:"/wʌn/",lvl:"A1",ex:"I have one brother.",exru:"У меня один брат."},
+    {en:"two",ru:"два",tr:"/tuː/",lvl:"A1",ex:"Two cats are sleeping.",exru:"Две кошки спят."},
+    {en:"three",ru:"три",tr:"/θriː/",lvl:"A1",ex:"Three books on the table.",exru:"Три книги на столе."},
+    {en:"ten",ru:"десять",tr:"/ten/",lvl:"A1",ex:"I'll be there in ten minutes.",exru:"Буду через десять минут."},
+    {en:"hundred",ru:"сто",tr:"/ˈhʌndrəd/",lvl:"A1",ex:"A hundred people came.",exru:"Пришло сто человек."},
+    {en:"thousand",ru:"тысяча",tr:"/ˈθaʊzənd/",lvl:"A2",ex:"A thousand stars in the sky.",exru:"Тысяча звёзд на небе."},
+    {en:"million",ru:"миллион",tr:"/ˈmɪljən/",lvl:"A2",ex:"A million dollars.",exru:"Миллион долларов."},
+    {en:"half",ru:"половина",tr:"/hɑːf/",lvl:"A2",ex:"Half an hour later.",exru:"Полчаса спустя."},
+    {en:"quarter",ru:"четверть",tr:"/ˈkwɔːtə/",lvl:"B1",ex:"A quarter of the pie.",exru:"Четверть пирога."},
+    {en:"dozen",ru:"дюжина",tr:"/ˈdʌzn/",lvl:"B1",ex:"A dozen eggs.",exru:"Дюжина яиц."},
+    {en:"billion",ru:"миллиард",tr:"/ˈbɪljən/",lvl:"B2",ex:"A billion users.",exru:"Миллиард пользователей."},
+    {en:"fraction",ru:"дробь, доля",tr:"/ˈfrækʃn/",lvl:"B2",ex:"Only a fraction of data.",exru:"Лишь доля данных."},
+    {en:"odd number",ru:"нечётное число",tr:"/ɒd ˈnʌmbə/",lvl:"B1",ex:"Three is an odd number.",exru:"Три — нечётное число."},
+    {en:"even number",ru:"чётное число",tr:"/ˈiːvn ˈnʌmbə/",lvl:"B1",ex:"Four is an even number.",exru:"Четыре — чётное число."}
+  ],
+  colors: [
+    {en:"red",ru:"красный",tr:"/red/",lvl:"A1",ex:"The apple is red.",exru:"Яблоко красное."},
+    {en:"blue",ru:"синий",tr:"/bluː/",lvl:"A1",ex:"The sky is blue.",exru:"Небо синее."},
+    {en:"green",ru:"зелёный",tr:"/ɡriːn/",lvl:"A1",ex:"Green leaves in summer.",exru:"Зелёные листья летом."},
+    {en:"yellow",ru:"жёлтый",tr:"/ˈjeləʊ/",lvl:"A1",ex:"Yellow sun.",exru:"Жёлтое солнце."},
+    {en:"black",ru:"чёрный",tr:"/blæk/",lvl:"A1",ex:"A black cat.",exru:"Чёрная кошка."},
+    {en:"white",ru:"белый",tr:"/waɪt/",lvl:"A1",ex:"White snow everywhere.",exru:"Белый снег повсюду."},
+    {en:"orange",ru:"оранжевый",tr:"/ˈɒrɪndʒ/",lvl:"A1",ex:"An orange sunset.",exru:"Оранжевый закат."},
+    {en:"purple",ru:"фиолетовый",tr:"/ˈpɜːpl/",lvl:"A2",ex:"Purple flowers bloom.",exru:"Фиолетовые цветы цветут."},
+    {en:"brown",ru:"коричневый",tr:"/braʊn/",lvl:"A2",ex:"A brown wooden table.",exru:"Коричневый деревянный стол."},
+    {en:"pink",ru:"розовый",tr:"/pɪŋk/",lvl:"A2",ex:"She wore a pink dress.",exru:"На ней было розовое платье."},
+    {en:"grey",ru:"серый",tr:"/ɡreɪ/",lvl:"A2",ex:"A grey sky before the rain.",exru:"Серое небо перед дождём."},
+    {en:"turquoise",ru:"бирюзовый",tr:"/ˈtɜːkwɔɪz/",lvl:"B1",ex:"The turquoise sea.",exru:"Бирюзовое море."},
+    {en:"scarlet",ru:"алый",tr:"/ˈskɑːlət/",lvl:"B2",ex:"A scarlet ribbon.",exru:"Алая лента."},
+    {en:"burgundy",ru:"бордовый",tr:"/ˈbɜːɡəndi/",lvl:"B2",ex:"A burgundy coat.",exru:"Бордовое пальто."},
+    {en:"beige",ru:"бежевый",tr:"/beɪʒ/",lvl:"B1",ex:"Beige walls in the room.",exru:"Бежевые стены в комнате."}
+  ],
+  animals: [
+    {en:"cat",ru:"кошка",tr:"/kæt/",lvl:"A1",ex:"My cat loves fish.",exru:"Моя кошка любит рыбу."},
+    {en:"dog",ru:"собака",tr:"/dɒɡ/",lvl:"A1",ex:"The dog is barking.",exru:"Собака лает."},
+    {en:"horse",ru:"лошадь",tr:"/hɔːs/",lvl:"A1",ex:"A horse runs fast.",exru:"Лошадь бежит быстро."},
+    {en:"cow",ru:"корова",tr:"/kaʊ/",lvl:"A1",ex:"The cow gives milk.",exru:"Корова даёт молоко."},
+    {en:"bird",ru:"птица",tr:"/bɜːd/",lvl:"A1",ex:"Birds sing in the morning.",exru:"Птицы поют утром."},
+    {en:"elephant",ru:"слон",tr:"/ˈelɪfənt/",lvl:"A2",ex:"An elephant has big ears.",exru:"У слона большие уши."},
+    {en:"tiger",ru:"тигр",tr:"/ˈtaɪɡə/",lvl:"A2",ex:"The tiger is a predator.",exru:"Тигр — хищник."},
+    {en:"dolphin",ru:"дельфин",tr:"/ˈdɒlfɪn/",lvl:"A2",ex:"Dolphins are smart.",exru:"Дельфины умные."},
+    {en:"penguin",ru:"пингвин",tr:"/ˈpeŋɡwɪn/",lvl:"A2",ex:"Penguins live in the cold.",exru:"Пингвины живут в холоде."},
+    {en:"squirrel",ru:"белка",tr:"/ˈskwɪrəl/",lvl:"B1",ex:"A squirrel hid a nut.",exru:"Белка спрятала орех."},
+    {en:"hedgehog",ru:"ёж",tr:"/ˈhedʒhɒɡ/",lvl:"B1",ex:"A hedgehog curled into a ball.",exru:"Ёж свернулся в клубок."},
+    {en:"butterfly",ru:"бабочка",tr:"/ˈbʌtəflaɪ/",lvl:"B1",ex:"A colourful butterfly.",exru:"Разноцветная бабочка."},
+    {en:"octopus",ru:"осьминог",tr:"/ˈɒktəpəs/",lvl:"B1",ex:"An octopus has eight arms.",exru:"У осьминога восемь щупалец."},
+    {en:"chameleon",ru:"хамелеон",tr:"/kəˈmiːliən/",lvl:"B2",ex:"A chameleon changes colour.",exru:"Хамелеон меняет цвет."}
+  ],
+  food: [
+    {en:"bread",ru:"хлеб",tr:"/bred/",lvl:"A1",ex:"Fresh bread smells great.",exru:"Свежий хлеб пахнет прекрасно."},
+    {en:"water",ru:"вода",tr:"/ˈwɔːtə/",lvl:"A1",ex:"Drink more water.",exru:"Пей больше воды."},
+    {en:"apple",ru:"яблоко",tr:"/ˈæpl/",lvl:"A1",ex:"An apple a day.",exru:"Яблоко в день."},
+    {en:"cheese",ru:"сыр",tr:"/tʃiːz/",lvl:"A1",ex:"I love cheese.",exru:"Я люблю сыр."},
+    {en:"egg",ru:"яйцо",tr:"/eɡ/",lvl:"A1",ex:"Boil two eggs.",exru:"Свари два яйца."},
+    {en:"meat",ru:"мясо",tr:"/miːt/",lvl:"A2",ex:"The meat is fresh.",exru:"Мясо свежее."},
+    {en:"vegetable",ru:"овощ",tr:"/ˈvedʒtəbl/",lvl:"A2",ex:"Eat more vegetables.",exru:"Ешь больше овощей."},
+    {en:"flour",ru:"мука",tr:"/ˈflaʊə/",lvl:"A2",ex:"Add flour to the dough.",exru:"Добавь муку в тесто."},
+    {en:"soup",ru:"суп",tr:"/suːp/",lvl:"A2",ex:"Hot soup warms you up.",exru:"Горячий суп согревает."},
+    {en:"dessert",ru:"десерт",tr:"/dɪˈzɜːt/",lvl:"B1",ex:"What's for dessert?",exru:"Что на десерт?"},
+    {en:"recipe",ru:"рецепт",tr:"/ˈresəpi/",lvl:"B1",ex:"Follow the recipe.",exru:"Следуй рецепту."},
+    {en:"spicy",ru:"острый",tr:"/ˈspaɪsi/",lvl:"B1",ex:"This curry is spicy.",exru:"Это карри острое."},
+    {en:"delicious",ru:"очень вкусный",tr:"/dɪˈlɪʃəs/",lvl:"B1",ex:"What a delicious cake!",exru:"Какой вкусный торт!"},
+    {en:"beverage",ru:"напиток",tr:"/ˈbevərɪdʒ/",lvl:"B2",ex:"Choose your beverage.",exru:"Выбери напиток."}
+  ],
+  travel: [
+    {en:"ticket",ru:"билет",tr:"/ˈtɪkɪt/",lvl:"A1",ex:"I bought a ticket.",exru:"Я купил билет."},
+    {en:"train",ru:"поезд",tr:"/treɪn/",lvl:"A1",ex:"The train is late.",exru:"Поезд опаздывает."},
+    {en:"plane",ru:"самолёт",tr:"/pleɪn/",lvl:"A1",ex:"The plane takes off.",exru:"Самолёт взлетает."},
+    {en:"hotel",ru:"отель",tr:"/həʊˈtel/",lvl:"A1",ex:"We stayed at a hotel.",exru:"Мы жили в отеле."},
+    {en:"passport",ru:"паспорт",tr:"/ˈpɑːspɔːt/",lvl:"A2",ex:"Show your passport.",exru:"Покажите паспорт."},
+    {en:"luggage",ru:"багаж",tr:"/ˈlʌɡɪdʒ/",lvl:"A2",ex:"Where's my luggage?",exru:"Где мой багаж?"},
+    {en:"suitcase",ru:"чемодан",tr:"/ˈsuːtkeɪs/",lvl:"A2",ex:"A heavy suitcase.",exru:"Тяжёлый чемодан."},
+    {en:"airport",ru:"аэропорт",tr:"/ˈeəpɔːt/",lvl:"A2",ex:"The airport is far.",exru:"Аэропорт далеко."},
+    {en:"destination",ru:"пункт назначения",tr:"/ˌdestɪˈneɪʃn/",lvl:"B1",ex:"What's your destination?",exru:"Каков ваш пункт назначения?"},
+    {en:"sightseeing",ru:"осмотр достопримечательностей",tr:"/ˈsaɪtsiːɪŋ/",lvl:"B1",ex:"We went sightseeing.",exru:"Мы пошли осматривать достопримечательности."},
+    {en:"itinerary",ru:"маршрут, план поездки",tr:"/aɪˈtɪnərəri/",lvl:"B2",ex:"Check the itinerary.",exru:"Проверьте маршрут."},
+    {en:"accommodation",ru:"жильё",tr:"/əˌkɒməˈdeɪʃn/",lvl:"B2",ex:"Find accommodation online.",exru:"Найди жильё онлайн."},
+    {en:"departure",ru:"отправление",tr:"/dɪˈpɑːtʃə/",lvl:"B1",ex:"Departure at noon.",exru:"Отправление в полдень."},
+    {en:"arrival",ru:"прибытие",tr:"/əˈraɪvl/",lvl:"B1",ex:"Arrival time is 6 pm.",exru:"Время прибытия — 18:00."}
+  ],
+  emotions: [
+    {en:"happy",ru:"счастливый",tr:"/ˈhæpi/",lvl:"A1",ex:"I'm so happy today!",exru:"Я так счастлив сегодня!"},
+    {en:"sad",ru:"грустный",tr:"/sæd/",lvl:"A1",ex:"Why are you sad?",exru:"Почему ты грустный?"},
+    {en:"angry",ru:"злой",tr:"/ˈæŋɡri/",lvl:"A1",ex:"Don't be angry.",exru:"Не злись."},
+    {en:"tired",ru:"усталый",tr:"/ˈtaɪəd/",lvl:"A1",ex:"I'm very tired.",exru:"Я очень устал."},
+    {en:"scared",ru:"испуганный",tr:"/skeəd/",lvl:"A2",ex:"The child was scared.",exru:"Ребёнок был испуган."},
+    {en:"excited",ru:"взволнованный (радостно)",tr:"/ɪkˈsaɪtɪd/",lvl:"A2",ex:"I'm excited about the trip!",exru:"Я в предвкушении поездки!"},
+    {en:"nervous",ru:"нервничающий",tr:"/ˈnɜːvəs/",lvl:"A2",ex:"She feels nervous before exams.",exru:"Она нервничает перед экзаменами."},
+    {en:"proud",ru:"гордый",tr:"/praʊd/",lvl:"A2",ex:"I'm proud of you.",exru:"Я горжусь тобой."},
+    {en:"jealous",ru:"ревнивый, завистливый",tr:"/ˈdʒeləs/",lvl:"B1",ex:"He felt jealous.",exru:"Он почувствовал зависть."},
+    {en:"grateful",ru:"благодарный",tr:"/ˈɡreɪtfl/",lvl:"B1",ex:"I'm grateful for your help.",exru:"Я благодарен за помощь."},
+    {en:"anxious",ru:"тревожный",tr:"/ˈæŋkʃəs/",lvl:"B2",ex:"She was anxious about the results.",exru:"Она тревожилась о результатах."},
+    {en:"overwhelmed",ru:"перегруженный (эмоционально)",tr:"/ˌəʊvəˈwelmd/",lvl:"B2",ex:"I feel overwhelmed at work.",exru:"Я чувствую перегрузку на работе."},
+    {en:"relieved",ru:"испытывающий облегчение",tr:"/rɪˈliːvd/",lvl:"B1",ex:"I'm relieved to hear that.",exru:"Я испытал облегчение, услышав это."},
+    {en:"curious",ru:"любопытный",tr:"/ˈkjʊəriəs/",lvl:"B1",ex:"I'm curious about it.",exru:"Мне это любопытно."}
+  ],
+  technology: [
+    {en:"computer",ru:"компьютер",tr:"/kəmˈpjuːtə/",lvl:"A1",ex:"My computer is slow.",exru:"Мой компьютер медленный."},
+    {en:"phone",ru:"телефон",tr:"/fəʊn/",lvl:"A1",ex:"Charge your phone.",exru:"Заряди телефон."},
+    {en:"screen",ru:"экран",tr:"/skriːn/",lvl:"A2",ex:"The screen is bright.",exru:"Экран яркий."},
+    {en:"keyboard",ru:"клавиатура",tr:"/ˈkiːbɔːd/",lvl:"A2",ex:"A wireless keyboard.",exru:"Беспроводная клавиатура."},
+    {en:"password",ru:"пароль",tr:"/ˈpɑːswɜːd/",lvl:"A2",ex:"Use a strong password.",exru:"Используй надёжный пароль."},
+    {en:"browser",ru:"браузер",tr:"/ˈbraʊzə/",lvl:"B1",ex:"Open the browser.",exru:"Открой браузер."},
+    {en:"software",ru:"программное обеспечение",tr:"/ˈsɒftweə/",lvl:"B1",ex:"Install the software.",exru:"Установи программное обеспечение."},
+    {en:"network",ru:"сеть",tr:"/ˈnetwɜːk/",lvl:"B1",ex:"The network is down.",exru:"Сеть не работает."},
+    {en:"update",ru:"обновление",tr:"/ˈʌpdeɪt/",lvl:"B1",ex:"Install the latest update.",exru:"Установи последнее обновление."},
+    {en:"algorithm",ru:"алгоритм",tr:"/ˈælɡərɪðəm/",lvl:"B2",ex:"The algorithm sorts data.",exru:"Алгоритм сортирует данные."},
+    {en:"database",ru:"база данных",tr:"/ˈdeɪtəbeɪs/",lvl:"B2",ex:"The database is encrypted.",exru:"База данных зашифрована."},
+    {en:"encryption",ru:"шифрование",tr:"/ɪnˈkrɪpʃn/",lvl:"C1",ex:"Encryption protects your data.",exru:"Шифрование защищает ваши данные."},
+    {en:"bandwidth",ru:"пропускная способность",tr:"/ˈbændwɪdθ/",lvl:"C1",ex:"We need more bandwidth.",exru:"Нам нужно больше пропускной способности."},
+    {en:"artificial intelligence",ru:"искусственный интеллект",tr:"/ˌɑːtɪˈfɪʃl ɪnˈtelɪdʒəns/",lvl:"B2",ex:"AI is everywhere now.",exru:"ИИ теперь повсюду."}
+  ],
+  business: [
+    {en:"meeting",ru:"встреча",tr:"/ˈmiːtɪŋ/",lvl:"A2",ex:"The meeting starts at 9.",exru:"Встреча начинается в 9."},
+    {en:"client",ru:"клиент",tr:"/ˈklaɪənt/",lvl:"A2",ex:"Our client is happy.",exru:"Наш клиент доволен."},
+    {en:"office",ru:"офис",tr:"/ˈɒfɪs/",lvl:"A1",ex:"I work in an office.",exru:"Я работаю в офисе."},
+    {en:"deadline",ru:"дедлайн, срок",tr:"/ˈdedlaɪn/",lvl:"B1",ex:"The deadline is Friday.",exru:"Срок — пятница."},
+    {en:"salary",ru:"зарплата",tr:"/ˈsæləri/",lvl:"B1",ex:"A decent salary.",exru:"Достойная зарплата."},
+    {en:"contract",ru:"контракт",tr:"/ˈkɒntrækt/",lvl:"B1",ex:"Sign the contract.",exru:"Подпиши контракт."},
+    {en:"investor",ru:"инвестор",tr:"/ɪnˈvestə/",lvl:"B2",ex:"An investor called us.",exru:"Инвестор позвонил нам."},
+    {en:"revenue",ru:"выручка",tr:"/ˈrevənjuː/",lvl:"B2",ex:"Revenue grew 20%.",exru:"Выручка выросла на 20%."},
+    {en:"profit",ru:"прибыль",tr:"/ˈprɒfɪt/",lvl:"B1",ex:"A healthy profit.",exru:"Хорошая прибыль."},
+    {en:"negotiation",ru:"переговоры",tr:"/nɪˌɡəʊʃiˈeɪʃn/",lvl:"B2",ex:"The negotiation went well.",exru:"Переговоры прошли хорошо."},
+    {en:"strategy",ru:"стратегия",tr:"/ˈstrætədʒi/",lvl:"B1",ex:"We need a new strategy.",exru:"Нам нужна новая стратегия."},
+    {en:"stakeholder",ru:"заинтересованная сторона",tr:"/ˈsteɪkhəʊldə/",lvl:"C1",ex:"All stakeholders agree.",exru:"Все заинтересованные стороны согласны."},
+    {en:"entrepreneur",ru:"предприниматель",tr:"/ˌɒntrəprəˈnɜː/",lvl:"B2",ex:"She's a young entrepreneur.",exru:"Она молодая предпринимательница."}
+  ],
+  "phrasal verbs": [
+    {en:"give up",ru:"сдаваться",tr:"/ɡɪv ʌp/",lvl:"A2",ex:"Don't give up!",exru:"Не сдавайся!"},
+    {en:"look after",ru:"заботиться",tr:"/lʊk ˈɑːftə/",lvl:"A2",ex:"She looks after her sister.",exru:"Она заботится о сестре."},
+    {en:"find out",ru:"узнать, выяснить",tr:"/faɪnd aʊt/",lvl:"A2",ex:"Let's find out the truth.",exru:"Давай выясним правду."},
+    {en:"turn on",ru:"включить",tr:"/tɜːn ɒn/",lvl:"A2",ex:"Turn on the light.",exru:"Включи свет."},
+    {en:"turn off",ru:"выключить",tr:"/tɜːn ɒf/",lvl:"A2",ex:"Turn off the TV.",exru:"Выключи телевизор."},
+    {en:"get along",ru:"ладить",tr:"/ɡet əˈlɒŋ/",lvl:"B1",ex:"We get along well.",exru:"Мы хорошо ладим."},
+    {en:"look forward to",ru:"ждать с нетерпением",tr:"/lʊk ˈfɔːwəd tuː/",lvl:"B1",ex:"I look forward to meeting you.",exru:"С нетерпением жду встречи."},
+    {en:"put off",ru:"откладывать",tr:"/pʊt ɒf/",lvl:"B1",ex:"Don't put off your homework.",exru:"Не откладывай домашнюю работу."},
+    {en:"give in",ru:"уступать",tr:"/ɡɪv ɪn/",lvl:"B1",ex:"He finally gave in.",exru:"Он наконец уступил."},
+    {en:"take after",ru:"быть похожим на",tr:"/teɪk ˈɑːftə/",lvl:"B1",ex:"She takes after her mother.",exru:"Она похожа на маму."},
+    {en:"bring up",ru:"воспитывать; поднимать тему",tr:"/brɪŋ ʌp/",lvl:"B1",ex:"He was brought up in London.",exru:"Он вырос в Лондоне."},
+    {en:"come up with",ru:"придумать",tr:"/kʌm ʌp wɪð/",lvl:"B2",ex:"She came up with a great idea.",exru:"Она придумала отличную идею."},
+    {en:"cut down on",ru:"сократить потребление",tr:"/kʌt daʊn ɒn/",lvl:"B2",ex:"Cut down on sugar.",exru:"Сократи сахар."},
+    {en:"get away with",ru:"избежать наказания",tr:"/ɡet əˈweɪ wɪð/",lvl:"B2",ex:"He got away with it.",exru:"Он вышел сухим из воды."}
+  ],
+  idioms: [
+    {en:"break the ice",ru:"растопить лёд, начать разговор",tr:"/breɪk ði aɪs/",lvl:"B1",ex:"He told a joke to break the ice.",exru:"Он пошутил, чтобы растопить лёд."},
+    {en:"piece of cake",ru:"проще простого",tr:"/piːs əv keɪk/",lvl:"B1",ex:"The test was a piece of cake.",exru:"Тест был проще простого."},
+    {en:"hit the books",ru:"сесть за учёбу",tr:"/hɪt ðə bʊks/",lvl:"B1",ex:"Time to hit the books!",exru:"Пора сесть за учёбу!"},
+    {en:"under the weather",ru:"неважно себя чувствовать",tr:"/ˈʌndə ðə ˈweðə/",lvl:"B1",ex:"I'm a bit under the weather.",exru:"Я немного неважно себя чувствую."},
+    {en:"once in a blue moon",ru:"очень редко",tr:"/wʌns ɪn ə bluː muːn/",lvl:"B2",ex:"He calls once in a blue moon.",exru:"Он звонит очень редко."},
+    {en:"cost an arm and a leg",ru:"стоить очень дорого",tr:"/kɒst ən ɑːm ənd ə leɡ/",lvl:"B2",ex:"That car cost an arm and a leg.",exru:"Эта машина стоила очень дорого."},
+    {en:"let the cat out of the bag",ru:"проболтаться, раскрыть секрет",tr:"/let ðə kæt aʊt əv ðə bæɡ/",lvl:"B2",ex:"She let the cat out of the bag.",exru:"Она проболталась."},
+    {en:"bite the bullet",ru:"стиснуть зубы и сделать",tr:"/baɪt ðə ˈbʊlɪt/",lvl:"B2",ex:"Just bite the bullet and call him.",exru:"Просто стисни зубы и позвони ему."},
+    {en:"on the fence",ru:"в нерешительности",tr:"/ɒn ðə fens/",lvl:"B2",ex:"I'm still on the fence.",exru:"Я всё ещё в нерешительности."},
+    {en:"the ball is in your court",ru:"теперь твой ход",tr:"/ðə bɔːl ɪz ɪn jɔː kɔːt/",lvl:"C1",ex:"The ball is in your court now.",exru:"Теперь твой ход."}
+  ]
+};
+
+/* ================== LOCALSTORAGE ================== */
+const LS_KEY = "linguafriend_v1";
+function loadState(){
+  try{ return JSON.parse(localStorage.getItem(LS_KEY)) || {decks:[], nextId:1, reviews:[]}; }
+  catch(e){ return {decks:[], nextId:1, reviews:[]}; }
+}
+function saveState(s){ localStorage.setItem(LS_KEY, JSON.stringify(s)); }
+let DB = loadState();
+
+/* ================== UI ================== */
+const $ = id => document.getElementById(id);
+const state = { topic:null, cards:[], index:0, flipped:false, deckId:null };
+
+const TOPIC_LIST = [
+  {id:"numbers",name:"Числа",emoji:"🔢"},
+  {id:"colors",name:"Цвета",emoji:"🎨"},
+  {id:"animals",name:"Животные",emoji:"🐾"},
+  {id:"food",name:"Еда",emoji:"🍎"},
+  {id:"travel",name:"Путешествия",emoji:"✈️"},
+  {id:"emotions",name:"Эмоции",emoji:"😊"},
+  {id:"technology",name:"Технологии",emoji:"💻"},
+  {id:"business",name:"Бизнес",emoji:"💼"},
+  {id:"phrasal verbs",name:"Фразовые глаголы",emoji:"🔗"},
+  {id:"idioms",name:"Идиомы",emoji:"💬"}
+];
+
+$('topics').innerHTML = TOPIC_LIST.map(t =>
+  `<div class="chip" onclick="pickTopic('${t.id}', this)">${t.emoji} ${t.name}</div>`
+).join('');
+
+function pickTopic(id, el){
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active'); state.topic = id;
+}
+function toggleTheme(){
+  const b = document.body;
+  b.dataset.theme = b.dataset.theme==='dark' ? 'light' : 'dark';
+}
+let toastTimer;
+function toast(msg){
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+/* ================== ГЕНЕРАЦИЯ КАРТОЧЕК ================== */
+const LEVEL_ORDER = ["A1","A2","B1","B2","C1"];
+function pickByLevel(pool, level, count){
+  const idx = LEVEL_ORDER.indexOf(level);
+  const allowed = LEVEL_ORDER.slice(0, idx+1);
+  let filtered = pool.filter(w => allowed.includes(w.lvl));
+  if(filtered.length < count){
+    filtered = pool.slice();
+  }
+  const shuffled = filtered.slice().sort(()=>Math.random()-0.5);
+  return shuffled.slice(0, Math.min(count, shuffled.length));
+}
+
+function createDeck(){
+  if(!state.topic){ toast('Сначала выбери тему 👆'); return; }
+  const level = $('level').value;
+  const count = +$('count').value;
+  const pool = VOCAB[state.topic] || [];
+  if(!pool.length){ toast('Для этой темы пока нет слов 😢'); return; }
+
+  const picked = pickByLevel(pool, level, count);
+  if(!picked.length){ toast('Не удалось подобрать слова'); return; }
+
+  const deck = {
+    id: DB.nextId++,
+    topic: state.topic,
+    level,
+    created: Date.now(),
+    cards: picked.map((w,i) => ({
+      id: DB.nextId++,
+      word: w.en, translation: w.ru, transcription: w.tr,
+      example: w.ex, example_ru: w.exru, hint: `Уровень ${w.lvl}`,
+      ease: 2.5, interval: 0, reps: 0,
+      due: todayStr()
+    }))
+  };
+  DB.decks.push(deck);
+  saveState(DB);
+  toast(`Готово! ${deck.cards.length} карточек создано ✨`);
+  renderDecks();
+  startDeck(deck.id);
+}
+
+function todayStr(){
+  const d = new Date();
+  return d.toISOString().slice(0,10);
+}
+function addDays(dateStr, days){
+  const d = new Date(dateStr);
+  d.setDate(d.getDate() + days);
+  return d.toISOString().slice(0,10);
+}
+
+/* ================== НАБОРЫ ================== */
+function renderDecks(){
+  const el = $('decks');
+  if(!DB.decks.length){ el.innerHTML = '<div style="color:var(--muted);font-size:13px">Пока пусто</div>'; return; }
+  el.innerHTML = DB.decks.slice().reverse().map(d => {
+    const studied = d.cards.filter(c=>c.reps>0).length;
+    return `<div class="deck-item" onclick="startDeck(${d.id})">
+      <span>📚 <b>${d.topic}</b> · ${d.level}</span>
+      <span style="color:var(--muted);font-size:12px">${studied}/${d.cards.length}</span>
+    </div>`;
+  }).join('');
+}
+
+/* ================== ИЗУЧЕНИЕ ================== */
+function startDeck(id){
+  const deck = DB.decks.find(d => d.id === id);
+  if(!deck) return;
+  state.deckId = id;
+  const today = todayStr();
+  const due = deck.cards.filter(c => c.due <= today);
+  if(!due.length){
+    $('studyPanel').innerHTML = `<div class="empty">
+      <div style="font-size:48px">🎉</div>
+      <p>Все карточки этого набора на сегодня пройдены!<br>
+      Возвращайся завтра или создай новый набор.</p></div>`;
+    return;
+  }
+  state.cards = due; state.index = 0;
+  renderCard();
+}
+
+function renderCard(){
+  const c = state.cards[state.index];
+  if(!c){ finishStudy(); return; }
+  state.flipped = false;
+  const pct = Math.round(state.index/state.cards.length*100);
+  $('studyPanel').innerHTML = `
+    <div class="flash-wrap">
+      <div class="progress"><div style="width:${pct}%"></div></div>
+      <div class="flash" id="flash" onclick="flip()">
+        <div class="flash-inner">
+          <div class="face front">
+            <button class="speak" onclick="event.stopPropagation();speak('${escAttr(c.word)}')">🔊</button>
+            <div class="word">${c.word}</div>
+            ${c.transcription ? `<div class="transcription">${c.transcription}</div>` : ''}
+            <div class="transcription" style="margin-top:20px;font-size:12px">
+              нажми на карточку, чтобы перевернуть
+            </div>
+          </div>
+          <div class="face back">
+            <button class="speak" onclick="event.stopPropagation();speak('${escAttr(c.word)}')">🔊</button>
+            <div class="word">${c.translation}</div>
+            ${c.example ? `<div class="example">${c.example}</div>` : ''}
+            ${c.example_ru ? `<div class="example-ru">${c.example_ru}</div>` : ''}
+            ${c.hint ? `<div class="hint">💡 ${c.hint}</div>` : ''}
+          </div>
+        </div>
+      </div>
+      <div class="rate">
+        <button class="again" onclick="rate(0)" disabled style="opacity:.35">Снова</button>
+        <button class="hard"  onclick="rate(1)" disabled style="opacity:.35">Трудно</button>
+        <button class="good"  onclick="rate(2)" disabled style="opacity:.35">Хорошо</button>
+        <button class="easy"  onclick="rate(3)" disabled style="opacity:.35">Легко</button>
+      </div>
+      <div class="sub">Карточка ${state.index+1} из ${state.cards.length}</div>
+    </div>`;
+}
+function escAttr(s){
+  return String(s).replace(/'/g,"\\'").replace(/"/g,"&quot;");
+}
+function flip(){
+  state.flipped = !state.flipped;
+  $('flash').classList.toggle('flipped', state.flipped);
+  document.querySelectorAll('.rate button').forEach(b => {
+    b.disabled = !state.flipped;
+    b.style.opacity = state.flipped ? 1 : .35;
+  });
+}
+
+function rate(q){
+  const c = state.cards[state.index];
+  // SM-2
+  if(q === 0){
+    c.reps = 0; c.interval = 0; c.ease = Math.max(1.3, c.ease - 0.2);
+  } else {
+    c.reps += 1;
+    if(c.reps === 1) c.interval = 1;
+    else if(c.reps === 2) c.interval = 3;
+    else c.interval = Math.round(c.interval * c.ease);
+    if(q === 1) c.ease = Math.max(1.3, c.ease - 0.15);
+    if(q === 3) c.ease = c.ease + 0.15;
+  }
+  c.due = addDays(todayStr(), c.interval);
+
+  DB.reviews.push({cardId: c.id, quality: q, ts: Date.now()});
+  saveState(DB);
+  loadStats();
+
+  state.index++;
+  renderCard();
+}
+
+function finishStudy(){
+  $('studyPanel').innerHTML = `<div class="empty">
+    <div style="font-size:48px">🏆</div>
+    <p>Отличная работа! Все карточки на сегодня пройдены.</p>
+    <button class="btn" style="width:auto;padding:10px 20px;margin-top:16px"
+      onclick="renderDecks()">К наборам</button>
+  </div>`;
+}
+
+function speak(text){
+  if(!('speechSynthesis' in window)){ toast('Озвучка не поддерживается'); return; }
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'en-US'; u.rate = .9;
+  speechSynthesis.cancel();
+  speechSynthesis.speak(u);
+}
+
+/* ================== СТАТИСТИКА ================== */
+function loadStats(){
+  let total = 0, learned = 0;
+  DB.decks.forEach(d => d.cards.forEach(c => {
+    total++; if(c.reps >= 3) learned++;
+  }));
+  const today = todayStr();
+  const todayCount = DB.reviews.filter(r => new Date(r.ts).toISOString().slice(0,10) === today).length;
+  const avg = DB.reviews.length
+    ? Math.round(DB.reviews.reduce((s,r)=>s+r.quality,0) / DB.reviews.length / 3 * 100)
+    : 0;
+  $('stTotal').textContent = total;
+  $('stLearned').textContent = learned;
+  $('stToday').textContent = todayCount;
+  $('stAcc').textContent = avg + '%';
+}
+
+/* ================== КЛАВИАТУРА ================== */
+document.addEventListener('keydown', e => {
+  if(e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+  if(e.code === 'Space'){ e.preventDefault(); if(!state.flipped) flip(); }
+  if(state.flipped){
+    if(e.key === '1') rate(0);
+    if(e.key === '2') rate(1);
+    if(e.key === '3') rate(2);
+    if(e.key === '4') rate(3);
+  }
+});
+
+/* ================== СТАРТ ================== */
+renderDecks();
+loadStats();
+</script>
+</body>
+</html>
